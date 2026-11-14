@@ -1,46 +1,55 @@
 # DBTxx | Security Advisories
 
-Repository dedicated to documenting and disclosing security vulnerabilities identified through authorized security research and responsible disclosure.
+A repository dedicated to documenting security research, vulnerability analysis, and responsible disclosure.
 
-## Purpose
+## About
 
-This repository serves as a centralized archive of security advisories, technical findings, proof-of-concepts, and remediation recommendations.
+This repository contains security advisories produced by DBTxx, documenting vulnerabilities identified through authorized security research and testing.
 
-## Scope
+Each publication aims to provide technical evidence, reproducible findings, impact analysis, and remediation recommendations.
 
-Research publications may include:
+## Research Areas
 
-- Web application vulnerabilities
+- Web Application Security
 - Cross-Site Scripting (XSS)
 - SQL Injection (SQLi)
-- Authentication and authorization flaws
-- Security misconfigurations
-- Other relevant security weaknesses
+- Authentication and Authorization
+- Access Control Vulnerabilities
+- Security Misconfigurations
+- Vulnerability Research and Analysis
 
-## Advisories
+## Publications
 
-| Project | Vulnerability | Classification | Status |
-|---|---|---|---|
-| Modified Shop 3.3.0 rev 16825 | Stored Cross-Site Scripting | CWE-79 | Draft |
+Security advisories are organized by affected product and vulnerability.
 
-## Disclosure Policy
+Each advisory may include:
 
-All research documented here is conducted within authorized environments or under applicable responsible disclosure practices.
+- Vulnerability description
+- Affected versions
+- Technical analysis
+- Proof of Concept (PoC)
+- Impact assessment
+- Reproduction steps
+- Remediation recommendations
+- Responsible disclosure status
 
-Technical details are published with consideration for affected users, vendors, and the security community.
+## Responsible Disclosure
 
-Proof-of-concepts are intended for educational, validation, and defensive purposes.
+All research is conducted in authorized environments or under applicable responsible disclosure practices.
+
+Technical information is published with consideration for affected vendors, users, and the security community.
 
 ## Researcher
 
-**DBTxx**
-
+**DBTxx**  
 Independent Security Researcher
 
-## Contact
+## Disclaimer
 
-For vulnerability reports, corrections, or security-related inquiries, please use the contact information available in this GitHub profile.
+The information provided in this repository is intended for security research, educational, and defensive purposes.
+
+No unauthorized access or exploitation of systems is endorsed.
 
 ---
 
-*Security research. Responsible disclosure. Technical evidence.*
+**Evidence-driven research. Responsible disclosure. Application security.**
