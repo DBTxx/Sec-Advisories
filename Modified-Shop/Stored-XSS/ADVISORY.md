@@ -355,7 +355,6 @@ No vendor confirmation or patch availability is currently claimed.
 
 - **Researcher:** Diego Teixeira
 - **Research type:** Independent security research
-- **Testing environment:** Authorized RedScan Academy laboratory
 - **Disclosure:** Responsible vulnerability disclosure
 
 ---
@@ -392,4 +391,5 @@ The information provided must not be used to access, test, or compromise systems
 ## 19. Contact
 
 - **Researcher:** Diego Teixeira
-- **GitHub:** https://github.com/DBTxx
+- **Via:** RedScan Academy 
+- **GitHub:** https://github.com/DBTx
