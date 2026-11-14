@@ -38,6 +38,7 @@ No session theft, data exfiltration, privilege escalation, unauthorized administ
 - **Source-declared release date (version metadata):** 2026-01-29
 
 **Affected versions:** Confirmed in Modified Shop 3.3.0 rev 16825. Other versions have not been tested.
+
 ---
 
 ## 3. Vulnerability Description
