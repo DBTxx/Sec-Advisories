@@ -70,5 +70,3 @@ GitHub: [DBTxx](https://github.com/DBTxx)
 ---
 
 This repository is intended for educational and defensive security research.
-
-```
