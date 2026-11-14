@@ -392,5 +392,5 @@ The information provided must not be used to access, test, or compromise systems
 ## 19. Contact
 
 - **Researcher:** Diego Teixeira
-- **Research environment:** RedScan Academy laboratory
+- **Research environment:** RedScan Academy
 - **GitHub:** https://github.com/DBTxx/Sec-Advisories
