@@ -1,7 +1,8 @@
+```markdown
 # Security Advisory — Stored XSS in Modified Shop Newsletter Module
 
 **CVE:** Not assigned  
-**Status:** Draft for disclosure  
+**Status:** Public advisory — vendor notification pending  
 **Date:** 2026-11-13  
 **Last Updated:** 2026-11-14
 
@@ -26,7 +27,7 @@ No session theft, data exfiltration, privilege escalation, unauthorized administ
 ## 2. Affected Product and Versions
 
 - **Vendor:** Modified Shop
-- **Vendor Repository:** [https://github.com/modified-shop/modified-shop](https://github.com/modified-shop/modified-shop)
+- **Vendor Repository:** https://github.com/modified-shop/modified-shop
 - **Product:** Modified Shop
 - **Version:** 3.3.0 rev 16825
 - **Official release tag:** `v3.3.0`
@@ -332,11 +333,12 @@ Monitoring should be performed without logging sensitive newsletter content unne
 | 2026-11-13 | Static source code analysis |
 | 2026-11-13 | Dynamic reproduction in an authorized laboratory |
 | 2026-11-13 | Verification against official source code |
+| 2026-11-14 | Advisory published on GitHub |
+| 2026-11-14 | Vulnerability submitted to VulDB |
 | Pending | Private vulnerability disclosure to the vendor |
 | Pending | Vendor acknowledgment |
 | Pending | Vendor technical assessment |
 | Pending | Security fix or mitigation availability |
-| Pending | Public disclosure |
 
 ---
 
@@ -391,5 +393,6 @@ The information provided must not be used to access, test, or compromise systems
 ## 19. Contact
 
 - **Researcher:** Diego Teixeira
-- **Via:** RedScan Academy 
-- **GitHub:** https://github.com/DBTx
+- **Research environment:** RedScan Academy laboratory
+- **GitHub:** https://github.com/DBTxx/Sec-Advisories
+```
