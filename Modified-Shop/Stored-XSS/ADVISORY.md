@@ -26,7 +26,7 @@ No session theft, data exfiltration, privilege escalation, unauthorized administ
 ## 2. Affected Product and Versions
 
 - **Vendor:** Modified Shop
-- **Vendor Repository:** https://github.com/modified-shop/modified-shop
+- **Vendor Repository:** [https://github.com/modified-shop/modified-shop](https://github.com/modified-shop/modified-shop)
 - **Product:** Modified Shop
 - **Version:** 3.3.0 rev 16825
 - **Official release tag:** `v3.3.0`
@@ -35,10 +35,9 @@ No session theft, data exfiltration, privilege escalation, unauthorized administ
 - **Affected file:** `admin/module_newsletter.php`
 - **Affected endpoint:** `/admin/module_newsletter.php`
 - **Vulnerable parameter:** `newsletter_body`
-- **Official source-declared release date:** 2026-01-29
+- **Source-declared release date (version metadata):** 2026-01-29
 
 **Affected versions:** Confirmed in Modified Shop 3.3.0 rev 16825. Other versions have not been tested.
-
 ---
 
 ## 3. Vulnerability Description
