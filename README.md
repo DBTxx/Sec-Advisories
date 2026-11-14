@@ -1,72 +1,46 @@
-```markdown
-# Stored XSS in Modified Shop 3.3.0
+# DBTxx | Security Advisories
 
-Security research documenting a Stored Cross-Site Scripting (XSS) vulnerability identified in the Newsletter Module of Modified Shop.
+Repository dedicated to documenting and disclosing security vulnerabilities identified through authorized security research and responsible disclosure.
 
-## Vulnerability Overview
+## Purpose
 
-| Field | Details |
-|---|---|
-| Product | Modified Shop |
-| Version | 3.3.0 rev 16825 |
-| Component | Newsletter Module |
-| Affected file | `admin/module_newsletter.php` |
-| Parameter | `newsletter_body` |
-| Vulnerability | Stored Cross-Site Scripting (XSS) |
-| CWE | CWE-79 |
-| CVE | Not assigned |
-| CVSS | Pending assessment |
+This repository serves as a centralized archive of security advisories, technical findings, proof-of-concepts, and remediation recommendations.
 
-## Description
+## Scope
 
-The Newsletter Module stores user-supplied HTML content and subsequently renders it without adequate output sanitization.
+Research publications may include:
 
-A crafted payload containing an event-handler attribute can execute JavaScript in the browser when the newsletter content is rendered.
+- Web application vulnerabilities
+- Cross-Site Scripting (XSS)
+- SQL Injection (SQLi)
+- Authentication and authorization flaws
+- Security misconfigurations
+- Other relevant security weaknesses
 
-The vulnerability was reproduced in an authorized RedScan Academy laboratory environment.
+## Advisories
 
-## Proof of Concept
+| Project | Vulnerability | Classification | Status |
+|---|---|---|---|
+| Modified Shop 3.3.0 rev 16825 | Stored Cross-Site Scripting | CWE-79 | Draft |
 
-The following harmless payload was used to demonstrate JavaScript execution:
+## Disclosure Policy
 
-```html
-<img src=x onerror=alert(document.domain)>
-```
+All research documented here is conducted within authorized environments or under applicable responsible disclosure practices.
 
-Two scenarios were confirmed:
+Technical details are published with consideration for affected users, vendors, and the security community.
 
-- Immediate execution after saving the newsletter.
-- Persistent execution during a subsequent newsletter preview request.
-
-Both scenarios were reproduced using the same authenticated default administrative account.
-
-Cross-user execution was not independently tested.
-
-## Repository Structure
-
-- `SECURITY-ADVISORY.md` — Full security advisory.
-- `poc/stored-xss.md` — Proof of Concept and reproduction details.
-- `analysis/source-to-sink.md` — Source code analysis.
-- `evidence/README.md` — Evidence documentation.
-
-## Testing Scope
-
-All testing was conducted in an authorized and controlled laboratory environment.
-
-No data exfiltration, session theft, privilege escalation, or unauthorized administrative actions were demonstrated.
-
-## Disclosure Status
-
-Responsible disclosure is pending.
-
-No vendor confirmation, security patch, or CVE assignment is currently claimed.
+Proof-of-concepts are intended for educational, validation, and defensive purposes.
 
 ## Researcher
 
-**Diego Teixeira**
+**DBTxx**
 
-GitHub: [DBTxx](https://github.com/DBTxx)
+Independent Security Researcher
+
+## Contact
+
+For vulnerability reports, corrections, or security-related inquiries, please use the contact information available in this GitHub profile.
 
 ---
 
-This repository is intended for educational and defensive security research.
+*Security research. Responsible disclosure. Technical evidence.*
