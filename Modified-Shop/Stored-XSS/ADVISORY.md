@@ -1,5 +1,3 @@
-```markdown
-
 # Security Advisory — Stored XSS in Modified Shop Newsletter Module
 
 **CVE:** Not assigned  
@@ -396,4 +394,3 @@ The information provided must not be used to access, test, or compromise systems
 - **Researcher:** Diego Teixeira
 - **Research environment:** RedScan Academy laboratory
 - **GitHub:** https://github.com/DBTxx/Sec-Advisories
-```
