@@ -1,9 +1,11 @@
+```markdown
 # Security Advisory — Stored XSS in Modified Shop Newsletter Module
 
 **CVE:** Not assigned  
 **Status:** Public advisory — vendor notification pending  
 **Date:** 2026-11-13  
-**Last Updated:** 2026-11-14
+**Last Updated:** 2026-11-15  
+**Advisory Version:** 1.3
 
 ---
 
@@ -17,9 +19,15 @@ An authenticated user with permission to access the Newsletter Module can submit
 
 The vulnerability was successfully reproduced in an authorized laboratory environment. JavaScript execution was confirmed both immediately after saving the content and during a subsequent request to the newsletter preview, demonstrating persistent storage and execution.
 
-Both scenarios were reproduced using the same administrative account. Execution in a separate administrative session has not been verified.
+Cross-user execution was subsequently confirmed using two separate administrative accounts operating in independent authenticated sessions.
 
-No session theft, data exfiltration, privilege escalation, unauthorized administrative actions, or account compromise was attempted or demonstrated.
+Account A submitted and stored the malicious newsletter content. Account B, a separate administrator with equivalent permissions, accessed the same stored newsletter and triggered JavaScript execution without submitting the payload again.
+
+Additional testing confirmed that JavaScript executing in the context of Account B could perform a same-origin HTTP request to the administrative Newsletter Module using the browser's existing authenticated session.
+
+The session cookie was configured with the `HttpOnly` attribute, preventing direct JavaScript access to its value through `document.cookie`. However, this protection does not prevent JavaScript executing within the application's origin from making authenticated same-origin requests.
+
+No session theft, data exfiltration, privilege escalation, unauthorized administrative modifications, or account compromise was demonstrated.
 
 ---
 
@@ -73,10 +81,25 @@ The use of `xtc_db_prepare_input()` does not provide HTML output encoding. Datab
 
 Successful exploitation results in JavaScript execution in the security context of the Modified Shop administrative interface.
 
-Two execution scenarios were confirmed:
+Three relevant behaviors were examined:
 
 - **Immediate execution:** The payload executes after the newsletter content is saved.
 - **Persistent execution:** The payload executes again when the stored newsletter content is rendered in a subsequent preview request.
+- **Cross-user execution:** The payload executes in the browser of a separate administrator who accesses the previously stored newsletter, without submitting the payload again.
+
+Cross-user execution was confirmed using two separate administrative accounts operating in independent authenticated sessions.
+
+Additional testing confirmed that JavaScript executing in the context of the second administrator could perform a same-origin HTTP request to the Newsletter Module using the browser's existing authenticated session.
+
+The request returned HTTP 200 OK without redirection.
+
+The session cookie attributes observed in the second administrator's browser were:
+
+- `HttpOnly`: true
+- `Secure`: false
+- `SameSite`: Lax
+
+The `HttpOnly` attribute prevents direct JavaScript access to the session cookie through `document.cookie`. However, it does not prevent JavaScript executing in the application's origin from making authenticated same-origin requests using the browser's existing session.
 
 Potential security consequences, depending on the execution context, browser security controls, and privileges of the affected user, include:
 
@@ -89,9 +112,9 @@ These consequences represent potential risks and were not independently demonstr
 
 **Testing limitations:**
 
-Session theft, sensitive data extraction, unauthorized administrative actions, privilege escalation, and account compromise were not attempted or demonstrated.
+Session theft, session hijacking, sensitive data extraction, unauthorized administrative modifications, privilege escalation, and account compromise were not demonstrated.
 
-The impact on other administrative users remains unconfirmed because cross-user execution was not tested.
+The authenticated same-origin request was manually initiated through the browser Developer Tools Console. It was not demonstrated as an administrative action directly triggered by the stored XSS payload.
 
 The practical impact depends on the permissions required to access the Newsletter Module and whether other administrative users can access the affected stored content.
 
@@ -113,7 +136,7 @@ The function requires an administrative session and explicit permission for the 
 
 The Newsletter Module is subject to this permission check through `admin/includes/application_top.php`.
 
-Testing was performed using the default administrative account.
+Testing was initially performed using the default administrative account. Cross-user validation was subsequently performed using a second administrative account with equivalent permissions.
 
 ---
 
@@ -127,7 +150,15 @@ When the stored newsletter content is rendered, the browser interprets the injec
 
 The vulnerability was confirmed through immediate execution after saving and persistent execution during a subsequent preview request.
 
-Both scenarios were reproduced using the same authenticated administrative account. Execution in a separate administrative session has not been independently verified.
+Cross-user exploitation was subsequently validated:
+
+1. Administrator A submitted and stored the malicious newsletter content.
+2. Administrator B, operating in a separate authenticated session, accessed the same stored newsletter.
+3. The JavaScript payload executed in Administrator B's browser without a new payload submission.
+
+This confirms that exploitation is not limited to the account that originally created the malicious content.
+
+Additional testing demonstrated that JavaScript executing in the context of Administrator B could make a same-origin request to the administrative Newsletter Module using the browser's existing authenticated session.
 
 ---
 
@@ -188,11 +219,69 @@ The comparison identified only one difference: the revision-control header. The 
 
 This establishes that the vulnerable implementation observed in the laboratory matches the official v3.3.0 source file.
 
+### Cross-User Validation
+
+Cross-user execution was tested using two separate administrative accounts:
+
+- **Account A:** Original administrative account used to submit and store the XSS payload.
+- **Account B:** Separate administrative account (`test`), initially created as a customer account and subsequently granted administrative permissions equivalent to Account A.
+
+Both accounts operated in independent authenticated sessions.
+
+The same previously stored newsletter was accessed by both accounts.
+
+The JavaScript payload executed in both sessions.
+
+No additional payload submission was performed during cross-user validation.
+
+This confirms that the stored payload can execute in the browser of a separate administrator who accesses the affected newsletter.
+
+### Authenticated Same-Origin Request Validation
+
+While authenticated as Account B, a same-origin HTTP request was manually executed through the browser Developer Tools Console:
+
+```javascript
+fetch('/admin/module_newsletter.php?ID=1', {
+  credentials: 'same-origin'
+})
+.then(response => response.text())
+.then(html => console.log('Status: conteúdo recebido', html.length))
+.catch(error => console.error(error));
+```
+
+Observed response:
+
+- **Requested endpoint:** `/admin/module_newsletter.php?ID=1`
+- **HTTP status:** 200 OK
+- **Final URL:** `http://192.168.56.144:8080/admin/module_newsletter.php?ID=1`
+- **Redirected:** false
+- **Response body length:** 30,313 characters
+
+The request was performed in the authenticated browser session of Account B and successfully returned a response from the administrative endpoint.
+
+This demonstrates that same-origin JavaScript can make authenticated requests using the browser's existing session.
+
+The request was manually initiated through Developer Tools. It was not directly triggered by the stored XSS payload.
+
+### Session Cookie Attributes
+
+The session cookie observed in Account B's browser had the following attributes:
+
+| Attribute | Observed value |
+|---|---|
+| HttpOnly | true |
+| Secure | false |
+| SameSite | Lax |
+
+The `HttpOnly` attribute prevents direct access to the cookie value through JavaScript APIs such as `document.cookie`.
+
+No session cookie theft or session hijacking was demonstrated.
+
 ---
 
 ## 8. Proof of Concept (PoC)
 
-Testing was performed in an authorized laboratory environment using the default administrative account with permission to access the Newsletter Module.
+Testing was performed in an authorized laboratory environment using administrative accounts with permission to access the Newsletter Module.
 
 **Payload:**
 
@@ -204,22 +293,45 @@ The payload uses a JavaScript alert to demonstrate execution. It does not perfor
 
 ### Observed Behavior
 
-Two execution scenarios were confirmed:
+Three relevant observations were documented:
 
 1. **Immediate execution:** After submitting the crafted newsletter content and saving the record, the JavaScript payload executed in the browser.
 2. **Persistent execution:** During a subsequent request to the newsletter preview, the same payload executed again without submitting a new POST request.
+3. **Cross-user execution:** A second administrator, operating in an independent authenticated session, accessed the same stored newsletter and triggered JavaScript execution without submitting the payload.
 
 The JavaScript alert displayed the laboratory application host:
 
 `192.168.56.144`
 
-These observations confirm that the application persistently stores the injected content and subsequently renders it in a way that allows JavaScript execution in the browser.
+These observations confirm that the application persistently stores the injected content and subsequently renders it in a way that allows JavaScript execution in the browser, including in the session of a separate administrator.
+
+### Authenticated Request Observation
+
+A same-origin request to the administrative Newsletter Module was manually executed while authenticated as the second administrator.
+
+The request returned HTTP 200 OK without redirection.
+
+This confirms that the browser could retrieve the administrative endpoint using its existing authenticated session.
+
+The request was manually initiated through Developer Tools and should not be interpreted as proof that the stored payload itself performed an administrative operation.
 
 ### Validation Scope
 
-Both execution scenarios were reproduced using the same authenticated administrative account.
+The following behaviors were confirmed:
 
-Execution in a separate administrative session was not tested. Cross-user exploitation therefore remains unconfirmed.
+- Immediate JavaScript execution after saving.
+- Persistent JavaScript execution during a subsequent preview request.
+- Cross-user JavaScript execution in a separate administrative session.
+- Successful same-origin authenticated request to the administrative Newsletter Module.
+
+The following behaviors were not demonstrated:
+
+- Session cookie theft.
+- Session hijacking.
+- Sensitive data exfiltration.
+- Unauthorized administrative modifications.
+- Privilege escalation.
+- Account compromise.
 
 ---
 
@@ -240,15 +352,28 @@ Execution in a separate administrative session was not tested. Cross-user exploi
 8. Access the saved newsletter preview again using its corresponding ID (e.g., `?ID=1`).
 9. Observe that the JavaScript alert executes again, confirming persistent storage and execution during a subsequent request without submitting a new payload.
 
+### Cross-User Reproduction
+
+10. Authenticate using a second administrative account in an independent browser session.
+11. Ensure that the second account has permission to access the Newsletter Module.
+12. Access the same previously stored newsletter through its preview functionality.
+13. Observe that the JavaScript payload executes in the second administrator's browser without a new payload submission.
+
+### Authenticated Request Observation
+
+14. While authenticated as the second administrator, open the browser Developer Tools Console.
+15. Execute a same-origin fetch request to the Newsletter Module endpoint.
+16. Observe the HTTP response status and final URL.
+
 **Expected behavior:**
 
 User-supplied HTML should be safely sanitized or encoded according to the application's intended functionality.
 
 **Actual behavior:**
 
-The stored markup is interpreted by the browser, resulting in JavaScript execution.
+The stored markup is interpreted by the browser, resulting in JavaScript execution, including when accessed by a separate administrator.
 
-**Testing scope:** Both execution scenarios were reproduced using the same authenticated account. Cross-user execution was not tested.
+**Testing scope:** Cross-user execution was confirmed. Authenticated same-origin request behavior was also observed through a manually initiated browser request. Session theft and unauthorized administrative actions were not demonstrated.
 
 ---
 
@@ -334,6 +459,8 @@ Monitoring should be performed without logging sensitive newsletter content unne
 | 2026-11-13 | Verification against official source code |
 | 2026-11-14 | Advisory published on GitHub |
 | 2026-11-14 | Vulnerability submitted to VulDB |
+| 2026-11-15 | Cross-user Stored XSS execution confirmed using two separate administrative accounts |
+| 2026-11-15 | Authenticated same-origin request behavior examined |
 | Pending | Private vulnerability disclosure to the vendor |
 | Pending | Vendor acknowledgment |
 | Pending | Vendor technical assessment |
@@ -376,6 +503,7 @@ No vendor confirmation or patch availability is currently claimed.
 | 1.0     | 2026-11-13 | Initial consolidated advisory |
 | 1.1     | 2026-11-13 | Technical review, privilege requirements clarification, impact qualification, and disclosure scope corrections |
 | 1.2     | 2026-11-14 | Clarified cross-user testing limitations, refined impact statements, reduced repetition, and improved remediation guidance |
+| 1.3     | 2026-11-15 | Added cross-user Stored XSS validation, documented authenticated same-origin request behavior and session cookie attributes, and updated testing scope and impact limitations |
 
 ---
 
@@ -394,3 +522,5 @@ The information provided must not be used to access, test, or compromise systems
 - **Researcher:** Diego Teixeira
 - **Research environment:** RedScan Academy
 - **GitHub:** https://github.com/DBTxx/Sec-Advisories
+```
+
