@@ -1,4 +1,3 @@
-```markdown
 # Security Advisory — Stored XSS in Modified Shop Newsletter Module
 
 **CVE:** Not assigned  
