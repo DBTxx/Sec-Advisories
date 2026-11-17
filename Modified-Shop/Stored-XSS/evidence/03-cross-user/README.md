@@ -2,7 +2,7 @@
 
 ## Objective
 
-Demonstrate Stored XSS execution across two different administrative accounts.
+Validate whether stored JavaScript content submitted through the Newsletter Module executes in a separate authenticated administrative session.
 
 ## Environment
 
@@ -10,39 +10,58 @@ Demonstrate Stored XSS execution across two different administrative accounts.
 - Version: 3.3.0 rev 16825
 - Target: 192.168.56.144
 - Component: Newsletter Module
-- Endpoint: admin/module_newsletter.php
+- Endpoint: `/admin/module_newsletter.php`
 
 ## Test Scenario
 
-The malicious newsletter content was previously stored using Account A.
+Two separate accounts were used during validation.
 
-The same stored newsletter was subsequently accessed using two different administrative accounts in separate browser sessions.
+**Account A — Test Researcher**
 
-JavaScript execution was observed in both sessions without submitting the payload again.
+The account used to submit and store the proof-of-concept payload.
+
+**Account B — Carlos Tuma**
+
+A separate account, initially created as a customer account and subsequently granted administrative access, including permission to access the Newsletter Module.
+
+The stored newsletter was accessed through separate authenticated browser sessions.
+
+Account B accessed the previously stored newsletter without submitting the payload again.
 
 ## Evidence
 
 | File | Description |
 |---|---|
-| cross-user-account-test-researcher.png | Original screenshot showing execution in the Test Researcher account. |
-| cross-user-account-admin.png | Original screenshot showing execution in the Carlos Tuma account. |
+| `cross-user-account-test-researcher.png` | Screenshot showing JavaScript execution in the Test Researcher account. |
+| `cross-user-account-admin.png` | Screenshot showing JavaScript execution in the Carlos Tuma account. |
 
 ## Observed Result
 
-The JavaScript payload executed in both administrative contexts and displayed the lab IP address:
+The JavaScript payload executed in both authenticated browser sessions.
 
-192.168.56.144
+The proof-of-concept displayed the laboratory IP address:
 
-This confirms cross-user Stored XSS execution in the tested environment.
+`192.168.56.144`
+
+Execution in Account B occurred without a new payload submission.
+
+This confirms cross-user Stored XSS execution between two separate authenticated accounts with access to the affected Newsletter Module.
 
 ## Scope and Limitations
 
-- Both accounts had administrative privileges.
-- Independent browser sessions were used, according to the test procedure.
+- Both accounts had administrative access to the Newsletter Module during validation.
+- Separate authenticated browser sessions were used.
+- Equivalent administrative permissions across both accounts were not established.
 - No session theft was demonstrated.
 - No cookie extraction or reuse was performed.
+- No session hijacking was demonstrated.
 - No unauthorized administrative action was demonstrated.
+- No privilege escalation or account compromise was demonstrated.
+
+The validation was limited to the two tested accounts and the laboratory environment.
 
 ## Integrity
 
 Original screenshots are preserved without annotations or modifications.
+
+The screenshots document the observed JavaScript execution in both authenticated sessions.
