@@ -1,0 +1,16 @@
+   365	
+   366	                          echo TEXT_TITLE.$newsletters_data['title'].'<br />';
+   367	
+   368	                          $customers_status = xtc_get_customers_statuses();
+   369	                          for ($j=0,$k=count($customers_status); $j<$k; $j++) {
+   370	                            $newsletters_data['bc'] = str_replace($customers_status[$j]['id'], $customers_status[$j]['text'], $newsletters_data['bc']);
+   371	                          }
+   372	
+   373	                          echo TEXT_TO.$newsletters_data['bc'].'<br />';
+   374	                          echo TEXT_CC.$newsletters_data['cc'].'<br /><br />'.TEXT_PREVIEW;
+   375	                          echo '<table style="border: 1px solid #a3a3a3; width:100%"><tr><td>'.$newsletters_data['body'].'</td></tr></table>';
+   376	                        ?>
+   377	                        </td>
+   378	                        <td class="dataTableContent txta-c" style="border-bottom: 1px solid; border-color: #999999; vertical-align: bottom!important;">
+   379	                          <?php if (!isset($ajax_img)) { ?>
+   380	                          <div class="pdg2"><a class="button" href="<?php echo xtc_href_link(FILENAME_MODULE_NEWSLETTER,'action=send&ID='.$news_data[$i]['id']); ?>"><?php echo BUTTON_SEND.'</a>'; ?></div>

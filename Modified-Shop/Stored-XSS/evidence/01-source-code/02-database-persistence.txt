@@ -1,0 +1,16 @@
+    55	        $sql_data_array = array(
+    56	          'title' => $title,
+    57	          'status' => '0',
+    58	          'bc' => $rzp,
+    59	          'cc' => $cc,
+    60	          'date' => 'now()',
+    61	          'body' => $newsletter_body
+    62	        );
+    63	
+    64	        if ($id != 0) {
+    65	           xtc_db_perform(TABLE_MODULE_NEWSLETTER, $sql_data_array, 'update', "newsletter_id = '" . $id . "'");
+    66	        } else {
+    67	           xtc_db_perform(TABLE_MODULE_NEWSLETTER, $sql_data_array);
+    68	           $id = xtc_db_insert_id();
+    69	        }
+    70	        

@@ -1,0 +1,11 @@
+    35	
+    36	      $title = xtc_db_prepare_input($_POST['title']);
+    37	      if ($title == '') $title = 'no title';
+    38	      $cc = xtc_db_prepare_input($_POST['cc']);
+    39	      $newsletter_body = xtc_db_prepare_input($_POST['newsletter_body']);
+    40	
+    41	      $rzp = '';
+    42	      if (isset($_POST['status'])) {
+    43	        for ($i=0,$n=count($customers_status); $i<$n; $i++) {
+    44	          if (isset($_POST['status'][$i]) && $_POST['status'][$i] == 'yes') {
+    45	            if ($rzp!='') $rzp .= ',';

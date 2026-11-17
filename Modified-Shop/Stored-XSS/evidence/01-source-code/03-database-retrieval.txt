@@ -1,0 +1,9 @@
+   172	    $newsletters_query = xtc_db_query("SELECT *
+   173	                                         FROM ".TABLE_MODULE_NEWSLETTER."
+   174	                                        WHERE newsletter_id = '".(int)$_GET['ID']."'");
+   175	    $newsletters_data = xtc_db_fetch_array($newsletters_query);
+   176	
+   177	    //Image path correction - absolute path needed
+   178	    $newsletters_data['body'] = str_replace('src="'.DIR_WS_CATALOG.'images/', 'src="'.((ENABLE_SSL === true) ? HTTPS_CATALOG_SERVER : HTTP_CATALOG_SERVER).DIR_WS_CATALOG.'images/', $newsletters_data['body']);
+   179	    
+   180	    $newsletter = new newsletter();
