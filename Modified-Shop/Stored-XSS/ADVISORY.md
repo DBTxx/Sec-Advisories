@@ -615,7 +615,7 @@ The researcher makes no claim that systems outside the tested environment are af
 ### Researcher
 
 **Name:** Diego Teixeira  
-**GitHub:** [Sec-Advisories](https://github.com/DBTxx)
+**GitHub:** (https://github.com/DBTxx)
 **Via:** RedScan Academy
 
 Independent security researcher focused on vulnerability research, application security, and cybersecurity.
