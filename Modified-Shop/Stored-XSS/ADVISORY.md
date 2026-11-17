@@ -3,169 +3,104 @@
 **CVE:** Not assigned  
 **Status:** Public advisory — vendor notification pending  
 **Date:** 2026-11-13  
-**Last Updated:** 2026-11-15  
-**Advisory Version:** 1.3
+**Last Updated:** 2026-11-17  
+**Advisory Version:** 1.4  
 
 ---
 
 ## 1. Executive Summary
 
-A Stored Cross-Site Scripting (Stored XSS) vulnerability was identified in the Newsletter Module of Modified Shop 3.3.0 (rev 16825).
+A Stored Cross-Site Scripting (Stored XSS) vulnerability was identified in the Newsletter Module of Modified Shop 3.3.0 rev 16825.
 
-The vulnerability affects the `newsletter_body` parameter in the administrative endpoint `admin/module_newsletter.php`. User-supplied content is stored in the database and subsequently rendered in the administrative interface without proper output encoding.
+The vulnerability affects the administrative endpoint:
 
-An authenticated user with permission to access the Newsletter Module can submit crafted HTML content containing JavaScript. The stored payload executes in the browser when the affected newsletter content is rendered.
+`/admin/module_newsletter.php`
 
-The vulnerability was successfully reproduced in an authorized laboratory environment. JavaScript execution was confirmed both immediately after saving the content and during a subsequent request to the newsletter preview, demonstrating persistent storage and execution.
+The vulnerable parameter is:
 
-Cross-user execution was subsequently confirmed using two separate administrative accounts operating in independent authenticated sessions.
+`newsletter_body`
 
-Account A submitted and stored the malicious newsletter content. Account B, a separate administrator with equivalent permissions, accessed the same stored newsletter and triggered JavaScript execution without submitting the payload again.
+User-controlled content submitted through this parameter is stored in the database and subsequently rendered in the administrative interface without appropriate contextual output encoding or HTML sanitization.
 
-Additional testing confirmed that JavaScript executing in the context of Account B could perform a same-origin HTTP request to the administrative Newsletter Module using the browser's existing authenticated session.
+A proof of concept using the following benign payload demonstrated JavaScript execution:
 
-The session cookie was configured with the `HttpOnly` attribute, preventing direct JavaScript access to its value through `document.cookie`. However, this protection does not prevent JavaScript executing within the application's origin from making authenticated same-origin requests.
+```html
+<img src=x onerror=alert(document.domain)>
+```
 
-No session theft, data exfiltration, privilege escalation, unauthorized administrative modifications, or account compromise was demonstrated.
+The vulnerability was confirmed through dynamic testing and static source-code analysis.
+
+Testing demonstrated that:
+
+- The submitted payload is accepted and stored.
+- JavaScript executes after the newsletter is saved.
+- JavaScript executes again when the stored newsletter is accessed through a subsequent preview request.
+- The stored payload executes in two separate authenticated administrative sessions.
+- A second account could trigger the stored payload without submitting it again.
+
+Cross-user execution was confirmed using two separate accounts with access to the Newsletter Module.
+
+A separate authenticated same-origin HTTP request test was also performed manually through the browser Developer Tools Console while authenticated as the second account. The request returned HTTP 200 OK without redirection.
+
+**Important distinction:** this HTTP request was initiated manually by the researcher through the Developer Tools Console. It was not initiated by the stored XSS payload and does not demonstrate an unauthorized administrative action.
+
+No session theft, cookie extraction, session hijacking, privilege escalation, unauthorized administrative modification, data exfiltration, or account compromise was demonstrated during testing.
+
+The vulnerability is classified as CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting').
+
+CVSS scoring and severity assessment remain pending.
 
 ---
 
-## 2. Affected Product and Versions
+## 2. Affected Product
 
-- **Vendor:** Modified Shop
-- **Vendor Repository:** https://github.com/modified-shop/modified-shop
-- **Product:** Modified Shop
-- **Version:** 3.3.0 rev 16825
-- **Official release tag:** `v3.3.0`
-- **Official commit:** `c531afbf7279f6e60ca7cda09f2c9d7ca5305c46`
-- **Component:** Newsletter Module
-- **Affected file:** `admin/module_newsletter.php`
-- **Affected endpoint:** `/admin/module_newsletter.php`
-- **Vulnerable parameter:** `newsletter_body`
-- **Source-declared release date (version metadata):** 2026-01-29
+| Field | Value |
+|---|---|
+| Product | Modified Shop |
+| Confirmed Version | 3.3.0 rev 16825 |
+| Release Tag | v3.3.0 |
+| Commit | `c531afbf7279f6e60ca7cda09f2c9d7ca5305c46` |
+| Affected Component | Newsletter Module |
+| Affected File | `admin/module_newsletter.php` |
+| Vulnerable Parameter | `newsletter_body` |
+| Vulnerability Type | Stored Cross-Site Scripting |
+| CVE | Not assigned |
 
-**Affected versions:** Confirmed in Modified Shop 3.3.0 rev 16825. Other versions have not been tested.
+The product version metadata identifies 2026-01-29 as the source-declared release date.
+
+Only Modified Shop 3.3.0 rev 16825 was tested and confirmed vulnerable.
+
+Other versions have not been tested. Their vulnerability status is therefore unknown.
 
 ---
 
 ## 3. Vulnerability Description
 
-The vulnerability exists in the Newsletter Module administrative endpoint:
+The Newsletter Module accepts user-controlled content through the `newsletter_body` POST parameter.
 
-`admin/module_newsletter.php`
-
-The application accepts user-controlled content through the POST parameter `newsletter_body`.
-
-The input is processed using `xtc_db_prepare_input()` (line 39), then included in the database record through `xtc_db_perform()` (lines 61–67).
-
-When an existing newsletter is retrieved, its stored content is loaded from the database (lines 173–175).
-
-The vulnerable output occurs at line 375, where the stored newsletter body is concatenated directly into an HTML response without contextual output encoding:
+The submitted value is processed using:
 
 ```php
-echo '<table style="border: 1px solid #a3a3a3; width:100%"><tr><td>'.$newsletters_data['body'].'</td></tr></table>';
+$newsletter_body = xtc_db_prepare_input($_POST['newsletter_body']);
 ```
 
-No explicit HTML output encoding or HTML sanitization is applied to the stored content at this output sink.
+The value is subsequently stored in the database.
 
-As a result, an authenticated user with permission to access the Newsletter Module can store HTML markup containing JavaScript, which is subsequently interpreted by the browser when the newsletter preview is rendered.
+When an existing newsletter is retrieved, its stored content is inserted directly into the generated HTML response.
 
-The issue was dynamically confirmed using a benign JavaScript payload in an authorized laboratory environment.
+The relevant source-to-sink flow is:
 
-The use of `xtc_db_prepare_input()` does not provide HTML output encoding. Database input preparation and output encoding serve different security purposes. Stored content must be safely handled according to its output context.
+1. User-controlled input.
+2. Input preparation.
+3. Database persistence.
+4. Database retrieval.
+5. HTML rendering without appropriate output encoding or sanitization.
 
----
+### 3.1 Input Source
 
-## 4. Impact
+File:
 
-Successful exploitation results in JavaScript execution in the security context of the Modified Shop administrative interface.
-
-Three relevant behaviors were examined:
-
-- **Immediate execution:** The payload executes after the newsletter content is saved.
-- **Persistent execution:** The payload executes again when the stored newsletter content is rendered in a subsequent preview request.
-- **Cross-user execution:** The payload executes in the browser of a separate administrator who accesses the previously stored newsletter, without submitting the payload again.
-
-Cross-user execution was confirmed using two separate administrative accounts operating in independent authenticated sessions.
-
-Additional testing confirmed that JavaScript executing in the context of the second administrator could perform a same-origin HTTP request to the Newsletter Module using the browser's existing authenticated session.
-
-The request returned HTTP 200 OK without redirection.
-
-The session cookie attributes observed in the second administrator's browser were:
-
-- `HttpOnly`: true
-- `Secure`: false
-- `SameSite`: Lax
-
-The `HttpOnly` attribute prevents direct JavaScript access to the session cookie through `document.cookie`. However, it does not prevent JavaScript executing in the application's origin from making authenticated same-origin requests using the browser's existing session.
-
-Potential security consequences, depending on the execution context, browser security controls, and privileges of the affected user, include:
-
-- Manipulation of administrative interface content.
-- Execution of unauthorized actions available to the affected user.
-- Access to information exposed to JavaScript within the affected page.
-- Abuse of administrative functionality available to the affected user.
-
-These consequences represent potential risks and were not independently demonstrated during testing.
-
-**Testing limitations:**
-
-Session theft, session hijacking, sensitive data extraction, unauthorized administrative modifications, privilege escalation, and account compromise were not demonstrated.
-
-The authenticated same-origin request was manually initiated through the browser Developer Tools Console. It was not demonstrated as an administrative action directly triggered by the stored XSS payload.
-
-The practical impact depends on the permissions required to access the Newsletter Module and whether other administrative users can access the affected stored content.
-
----
-
-## 5. Classification
-
-- **Vulnerability type:** Stored Cross-Site Scripting (Stored XSS)
-- **CWE:** CWE-79 — Improper Neutralization of Input During Web Page Generation
-- **OWASP category:** A03:2021 — Injection
-- **Authentication required:** Yes
-- **Privilege requirement:** Administrative access with permission to access the Newsletter Module
-- **CVSS:** Pending assessment
-- **Severity:** Not yet assigned
-
-Source code analysis confirmed that access to administrative pages is controlled by `xtc_check_permission()` in `admin/includes/functions/general.php`.
-
-The function requires an administrative session and explicit permission for the requested page, except for specific predefined exceptions.
-
-The Newsletter Module is subject to this permission check through `admin/includes/application_top.php`.
-
-Testing was initially performed using the default administrative account. Cross-user validation was subsequently performed using a second administrative account with equivalent permissions.
-
----
-
-## 6. Exploitation Scenario
-
-An authenticated user with permission to access the Newsletter Module submits crafted HTML content through the `newsletter_body` parameter.
-
-The application stores the submitted content in the database without applying appropriate HTML output encoding or sanitization.
-
-When the stored newsletter content is rendered, the browser interprets the injected markup and executes the embedded JavaScript.
-
-The vulnerability was confirmed through immediate execution after saving and persistent execution during a subsequent preview request.
-
-Cross-user exploitation was subsequently validated:
-
-1. Administrator A submitted and stored the malicious newsletter content.
-2. Administrator B, operating in a separate authenticated session, accessed the same stored newsletter.
-3. The JavaScript payload executed in Administrator B's browser without a new payload submission.
-
-This confirms that exploitation is not limited to the account that originally created the malicious content.
-
-Additional testing demonstrated that JavaScript executing in the context of Administrator B could make a same-origin request to the administrative Newsletter Module using the browser's existing authenticated session.
-
----
-
-## 7. Technical Evidence
-
-### Source
-
-File: `admin/module_newsletter.php`
+`admin/module_newsletter.php`
 
 Line 39:
 
@@ -173,23 +108,33 @@ Line 39:
 $newsletter_body = xtc_db_prepare_input($_POST['newsletter_body']);
 ```
 
-### Database persistence
+The application receives the `newsletter_body` parameter from the submitted HTTP request.
 
-Lines 61–67:
+The use of `xtc_db_prepare_input()` does not constitute contextual HTML output encoding.
+
+Input preparation and output encoding are different security operations.
+
+### 3.2 Database Persistence
+
+The newsletter content is included in the database data array:
 
 ```php
 'body' => $newsletter_body
 ```
 
-The data is persisted through:
+The application subsequently performs the database operation using:
 
 ```php
 xtc_db_perform(TABLE_MODULE_NEWSLETTER, $sql_data_array);
 ```
 
-### Database retrieval
+Relevant source-code lines: 55–68.
 
-Lines 173–175:
+This allows the submitted content to persist beyond the original HTTP request.
+
+### 3.3 Database Retrieval
+
+The application retrieves the newsletter using:
 
 ```php
 $newsletters_query = xtc_db_query("SELECT *
@@ -198,46 +143,66 @@ $newsletters_query = xtc_db_query("SELECT *
 $newsletters_data = xtc_db_fetch_array($newsletters_query);
 ```
 
-### Vulnerable output
+Relevant source-code lines: 172–175.
 
-Line 375:
+The previously stored content is retrieved and made available for rendering.
+
+### 3.4 HTML Output Sink
+
+The retrieved content is inserted directly into an HTML response:
 
 ```php
 echo '<table style="border: 1px solid #a3a3a3; width:100%"><tr><td>'.$newsletters_data['body'].'</td></tr></table>';
 ```
 
-### Root cause
+Relevant source-code line: 375.
 
-The application stores user-controlled newsletter content and later inserts it directly into an HTML response without context-appropriate output encoding or sanitization.
+The output sink does not apply contextual HTML encoding or an HTML sanitization process before rendering the stored content.
 
-### Source code verification
+Consequently, executable HTML event-handler attributes can be interpreted by the browser.
 
-The vulnerable file from the laboratory environment was compared against the corresponding file in the official Modified Shop v3.3.0 source repository.
+---
 
-The comparison identified only one difference: the revision-control header. The executable code was otherwise identical.
+## 4. Security Impact
 
-This establishes that the vulnerable implementation observed in the laboratory matches the official v3.3.0 source file.
+The confirmed impact is persistent JavaScript execution in the browser context of authenticated users who can access the affected Newsletter Module.
 
-### Cross-User Validation
+### 4.1 Persistent Execution
 
-Cross-user execution was tested using two separate administrative accounts:
+The submitted content remains stored in the database.
 
-- **Account A:** Original administrative account used to submit and store the XSS payload.
-- **Account B:** Separate administrative account (`test`), initially created as a customer account and subsequently granted administrative permissions equivalent to Account A.
+JavaScript execution was reproduced:
 
-Both accounts operated in independent authenticated sessions.
+- After submitting and saving the newsletter.
+- During a subsequent request to access the stored newsletter preview.
 
-The same previously stored newsletter was accessed by both accounts.
+The second execution did not require submitting the payload again.
 
-The JavaScript payload executed in both sessions.
+### 4.2 Cross-User Execution
 
-No additional payload submission was performed during cross-user validation.
+Cross-user validation was performed using two separate accounts.
 
-This confirms that the stored payload can execute in the browser of a separate administrator who accesses the affected newsletter.
+**Account A**
 
-### Authenticated Same-Origin Request Validation
+The first account submitted and stored the proof-of-concept payload.
 
-While authenticated as Account B, a same-origin HTTP request was manually executed through the browser Developer Tools Console:
+**Account B**
+
+A separate account, initially created as a customer account and subsequently granted administrative access, including permission to access the Newsletter Module.
+
+Account B accessed the same stored newsletter.
+
+The JavaScript payload executed in Account B's browser session without requiring a new submission.
+
+This confirms that the stored content can affect another authenticated user with access to the affected module.
+
+The validation was limited to the two tested accounts. It does not establish that every administrative role or permission configuration is affected.
+
+### 4.3 Same-Origin Request Test
+
+A separate HTTP request test was manually performed through the browser Developer Tools Console while authenticated as Account B.
+
+The following JavaScript was executed manually:
 
 ```javascript
 fetch('/admin/module_newsletter.php?ID=1', {
@@ -248,278 +213,413 @@ fetch('/admin/module_newsletter.php?ID=1', {
 .catch(error => console.error(error));
 ```
 
-Observed response:
+Observed results:
 
-- **Requested endpoint:** `/admin/module_newsletter.php?ID=1`
-- **HTTP status:** 200 OK
-- **Final URL:** `http://192.168.56.144:8080/admin/module_newsletter.php?ID=1`
-- **Redirected:** false
-- **Response body length:** 30,313 characters
-
-The request was performed in the authenticated browser session of Account B and successfully returned a response from the administrative endpoint.
-
-This demonstrates that same-origin JavaScript can make authenticated requests using the browser's existing session.
-
-The request was manually initiated through Developer Tools. It was not directly triggered by the stored XSS payload.
-
-### Session Cookie Attributes
-
-The session cookie observed in Account B's browser had the following attributes:
-
-| Attribute | Observed value |
+| Field | Result |
 |---|---|
-| HttpOnly | true |
-| Secure | false |
+| Requested Endpoint | `/admin/module_newsletter.php?ID=1` |
+| HTTP Status | 200 OK |
+| Final URL | `http://192.168.56.144:8080/admin/module_newsletter.php?ID=1` |
+| Redirected | No |
+| Response Body Length | 30,313 characters |
+
+This test documents the behavior of a manually initiated same-origin request in the authenticated browser session.
+
+It was not triggered by the stored XSS payload.
+
+The HTTP status and response length alone do not establish the contents or sensitivity of the returned response. No unauthorized administrative action was demonstrated through this test.
+
+### 4.4 Session Cookie Attributes
+
+The following cookie attributes were observed during testing:
+
+| Attribute | Observed Value |
+|---|---|
+| HttpOnly | Present |
+| Secure | Not present |
 | SameSite | Lax |
 
-The `HttpOnly` attribute prevents direct access to the cookie value through JavaScript APIs such as `document.cookie`.
+The presence of HttpOnly provides protection against direct JavaScript access to the session cookie.
 
-No session cookie theft or session hijacking was demonstrated.
+However, HttpOnly does not prevent JavaScript executing in the application's origin from potentially making same-origin requests using the browser's existing authenticated session.
+
+The absence of the Secure attribute means the cookie is not explicitly restricted to HTTPS transmission.
+
+These observations are security-relevant configuration findings. They do not establish that session theft or session hijacking occurred.
+
+### 4.5 Actions Not Demonstrated
+
+The following activities were not performed or demonstrated:
+
+- Session cookie extraction.
+- Session hijacking.
+- Unauthorized administrative actions.
+- Privilege escalation.
+- Unauthorized account modification.
+- Data exfiltration.
+- Account compromise.
+- Execution against users without access to the affected administrative module.
+
+The impact assessment must remain limited to the demonstrated behavior.
 
 ---
 
-## 8. Proof of Concept (PoC)
+## 5. Vulnerability Classification
 
-Testing was performed in an authorized laboratory environment using administrative accounts with permission to access the Newsletter Module.
+| Classification | Value |
+|---|---|
+| CWE | CWE-79 |
+| OWASP Top 10 | A03:2021 – Injection |
+| Vulnerability Type | Stored Cross-Site Scripting |
+| Attack Vector | Web application |
+| Authentication Required | Yes |
+| Required Access | Permission to access the Newsletter Module |
+| User Interaction | Access to the affected newsletter content |
+| CVSS | Pending assessment |
+| Severity | Pending assessment |
 
-**Payload:**
+The vulnerability requires an authenticated account with permission to access the affected administrative functionality.
+
+The cross-user validation confirms execution in a second account with access to the Newsletter Module.
+
+A definitive CVSS score has not yet been assigned.
+
+---
+
+## 6. Proof of Concept
+
+### 6.1 Payload
+
+The following benign payload was used to validate JavaScript execution:
 
 ```html
 <img src=x onerror=alert(document.domain)>
 ```
 
-The payload uses a JavaScript alert to demonstrate execution. It does not perform data exfiltration or modify application records.
+The payload displays the current document domain when the browser processes the injected HTML.
 
-### Observed Behavior
+No external communication, credential collection, session extraction, or destructive operation is performed by this payload.
 
-Three relevant observations were documented:
+### 6.2 Reproduction Steps
 
-1. **Immediate execution:** After submitting the crafted newsletter content and saving the record, the JavaScript payload executed in the browser.
-2. **Persistent execution:** During a subsequent request to the newsletter preview, the same payload executed again without submitting a new POST request.
-3. **Cross-user execution:** A second administrator, operating in an independent authenticated session, accessed the same stored newsletter and triggered JavaScript execution without submitting the payload.
+1. Authenticate to the Modified Shop administrative interface using an account with permission to access the Newsletter Module.
+2. Navigate to the Newsletter Module.
+3. Open or create a newsletter.
+4. Submit the proof-of-concept payload through the `newsletter_body` parameter.
+5. Save the newsletter.
+6. Observe JavaScript execution in the browser.
+7. Access the stored newsletter through a subsequent preview request.
+8. Observe that JavaScript executes again without resubmitting the payload.
+9. Authenticate using a separate account with permission to access the same module.
+10. Access the previously stored newsletter.
+11. Observe JavaScript execution in the second account's browser session.
 
-The JavaScript alert displayed the laboratory application host:
+### 6.3 Expected Result
 
-`192.168.56.144`
+User-controlled content should not execute as JavaScript when rendered in the administrative interface.
 
-These observations confirm that the application persistently stores the injected content and subsequently renders it in a way that allows JavaScript execution in the browser, including in the session of a separate administrator.
+### 6.4 Actual Result
 
-### Authenticated Request Observation
+The submitted content was stored and subsequently rendered as executable HTML.
 
-A same-origin request to the administrative Newsletter Module was manually executed while authenticated as the second administrator.
-
-The request returned HTTP 200 OK without redirection.
-
-This confirms that the browser could retrieve the administrative endpoint using its existing authenticated session.
-
-The request was manually initiated through Developer Tools and should not be interpreted as proof that the stored payload itself performed an administrative operation.
-
-### Validation Scope
-
-The following behaviors were confirmed:
-
-- Immediate JavaScript execution after saving.
-- Persistent JavaScript execution during a subsequent preview request.
-- Cross-user JavaScript execution in a separate administrative session.
-- Successful same-origin authenticated request to the administrative Newsletter Module.
-
-The following behaviors were not demonstrated:
-
-- Session cookie theft.
-- Session hijacking.
-- Sensitive data exfiltration.
-- Unauthorized administrative modifications.
-- Privilege escalation.
-- Account compromise.
+JavaScript execution was confirmed in two separate authenticated administrative sessions.
 
 ---
 
-## 9. Reproduction Steps
+## 7. Source Code Verification
 
-1. Access the Modified Shop administrative panel in an authorized test environment.
-2. Authenticate using an administrative account with permission to access the Newsletter Module.
-3. Open `admin/module_newsletter.php`.
-4. Locate the newsletter body field.
-5. Submit the following payload:
+Static source-code analysis confirmed the complete source-to-sink flow:
 
-   ```html
-   <img src=x onerror=alert(document.domain)>
-   ```
+| Stage | Location | Behavior |
+|---|---|---|
+| Input | Line 39 | Receives `newsletter_body` |
+| Persistence | Lines 55–68 | Stores submitted content |
+| Retrieval | Lines 172–175 | Retrieves stored newsletter |
+| Output | Line 375 | Renders stored content without appropriate contextual encoding or sanitization |
 
-6. Save the newsletter.
-7. Observe the JavaScript alert.
-8. Access the saved newsletter preview again using its corresponding ID (e.g., `?ID=1`).
-9. Observe that the JavaScript alert executes again, confirming persistent storage and execution during a subsequent request without submitting a new payload.
+### 7.1 Source Integrity
 
-### Cross-User Reproduction
+The official source file and the laboratory source file were compared.
 
-10. Authenticate using a second administrative account in an independent browser session.
-11. Ensure that the second account has permission to access the Newsletter Module.
-12. Access the same previously stored newsletter through its preview functionality.
-13. Observe that the JavaScript payload executes in the second administrator's browser without a new payload submission.
+The comparison identified a difference in the revision-control header. The executable code was otherwise identical.
 
-### Authenticated Request Observation
+SHA-256 hashes:
 
-14. While authenticated as the second administrator, open the browser Developer Tools Console.
-15. Execute a same-origin fetch request to the Newsletter Module endpoint.
-16. Observe the HTTP response status and final URL.
-
-**Expected behavior:**
-
-User-supplied HTML should be safely sanitized or encoded according to the application's intended functionality.
-
-**Actual behavior:**
-
-The stored markup is interpreted by the browser, resulting in JavaScript execution, including when accessed by a separate administrator.
-
-**Testing scope:** Cross-user execution was confirmed. Authenticated same-origin request behavior was also observed through a manually initiated browser request. Session theft and unauthorized administrative actions were not demonstrated.
-
----
-
-## 10. Mitigation
-
-Until a definitive fix is available:
-
-- Restrict access to the Newsletter Module to trusted users who require it.
-- Avoid submitting untrusted or unsanitized HTML through the Newsletter Module.
-- Review existing newsletter records for potentially malicious markup.
-- Consider implementing a restrictive Content Security Policy (CSP) as an additional security layer.
-
-These measures reduce exposure but do not replace the required code correction.
-
----
-
-## 11. Recommended Fix
-
-The application should apply server-side HTML sanitization using a well-maintained HTML sanitization library with a strict allowlist if newsletter formatting requires HTML.
-
-The sanitization policy should:
-
-- Allow only HTML elements required for legitimate newsletter formatting.
-- Remove executable elements, including `<script>`.
-- Remove event-handler attributes such as `onerror`, `onload`, and `onclick`.
-- Restrict URL attributes to explicitly permitted schemes.
-- Reject dangerous elements and attributes, including unsafe SVG and embedded content.
-- Ensure that sanitized content is rendered safely in its intended HTML context.
-
-If HTML formatting is not required, the application should use context-appropriate output encoding, such as `htmlspecialchars()` for HTML text contexts.
-
-The application must not rely on database input preparation as an XSS prevention mechanism.
-
-Existing stored newsletter records should also be reviewed and sanitized before being rendered.
-
-The definitive fix must prevent untrusted JavaScript execution while preserving the module's intended newsletter formatting functionality.
-
----
-
-## 12. Detection and Indicators
-
-Potential indicators include:
-
-- Newsletter records containing unexpected HTML elements.
-- Event handlers such as `onerror`, `onload`, and other executable attributes.
-- Suspicious JavaScript-related content in stored newsletter bodies.
-- Unexpected modifications to newsletter records.
-
-A database review should be performed to identify previously stored content that may contain malicious markup.
-
-Example search terms:
+**Official source file:**
 
 ```text
-<script
-<iframe
-<svg
-onerror=
-onload=
-onclick=
-onmouseover=
-javascript:
+fc5d364e85e83d76972db4a35f7820dbc8e390ce8c0861c3b9802df124f482ba
 ```
 
-These indicators are not exhaustive and should be treated as investigation leads rather than definitive proof of exploitation.
+**Laboratory source file:**
 
-### Suggested Monitoring
+```text
+65956b2366a917653933b2b3b306b87405819b04d3ffcf91240220b1b936bdfa
+```
 
-Monitor administrative POST requests to `admin/module_newsletter.php`, particularly submissions containing unexpected HTML elements or event-handler attributes in the `newsletter_body` parameter.
+The source-code excerpts and their corresponding SHA-256 manifest are available in the evidence repository.
 
-Correlate suspicious submissions with subsequent newsletter preview requests to identify possible stored XSS exploitation attempts.
+---
 
-Monitoring should be performed without logging sensitive newsletter content unnecessarily.
+## 8. Cross-User Validation
+
+Cross-user validation was performed on 2026-11-15.
+
+The objective was to determine whether the stored payload could execute in a separate authenticated session.
+
+### 8.1 Test Configuration
+
+| Account | Description |
+|---|---|
+| Account A | Account used to submit and store the payload |
+| Account B | Separate account subsequently granted administrative access, including permission to access the Newsletter Module |
+
+### 8.2 Procedure
+
+1. Account A submitted the benign payload.
+2. The application stored the content.
+3. Account B authenticated through a separate browser session.
+4. Account B accessed the same stored newsletter.
+5. The browser executed the stored JavaScript without a new payload submission.
+
+### 8.3 Result
+
+Cross-user execution was confirmed.
+
+The result demonstrates that the vulnerability is not restricted to the original submitting session.
+
+The test does not establish that every administrative role, permission configuration, or application user is affected.
+
+Screenshots documenting the test are available in:
+
+`evidence/03-cross-user/`
+
+---
+
+## 9. HTTP Request Evidence
+
+HTTP request evidence was captured on 2026-11-17 using Firefox Developer Tools.
+
+The captured request corresponds to the submission of the newsletter content through:
+
+`POST /admin/module_newsletter.php?action=save`
+
+The request includes the `newsletter_body` parameter containing the proof-of-concept payload.
+
+The evidence package contains:
+
+| File | Description |
+|---|---|
+| `01-post-request.txt` | Captured HTTP POST request headers |
+| `02-post-payload.txt` | Captured multipart request body |
+| `SHA256SUMS.txt` | SHA-256 integrity manifest |
+
+The session cookie was redacted from the published request evidence.
+
+The captured request documents how the payload was transmitted to the application.
+
+It does not independently establish database persistence or JavaScript execution; those behaviors were validated separately.
+
+Evidence directory:
+
+`evidence/04-http-requests/`
+
+---
+
+## 10. Evidence Repository
+
+The supporting evidence is organized into the following directories:
+
+```text
+Stored-XSS/
+├── ADVISORY.md
+└── evidence/
+    ├── README.md
+    ├── 01-source-code/
+    ├── 02-poc/
+    ├── 03-cross-user/
+    ├── 04-http-requests/
+    └── 05-validation/
+```
+
+### 10.1 Evidence Categories
+
+**01-source-code/**
+
+Contains source-code excerpts documenting the input, database persistence, retrieval, and vulnerable output sink.
+
+**02-poc/**
+
+Contains screenshots documenting payload submission and JavaScript execution.
+
+**03-cross-user/**
+
+Contains screenshots documenting execution in two separate authenticated accounts.
+
+**04-http-requests/**
+
+Contains the captured HTTP POST request, multipart payload, and SHA-256 manifest.
+
+**05-validation/**
+
+Contains the validation record, confirmed results, testing methodology, and limitations.
+
+The evidence repository is intended to support independent technical review of the reported vulnerability.
+
+---
+
+## 11. Remediation Recommendations
+
+The vulnerable output operation must be corrected according to the intended content format.
+
+### 11.1 If Newsletter Content Is Intended to Be Plain Text
+
+Apply contextual HTML output encoding before inserting the content into the HTML response.
+
+For PHP, an appropriate encoding function is:
+
+```php
+htmlspecialchars(
+    $newsletters_data['body'],
+    ENT_QUOTES | ENT_SUBSTITUTE,
+    'UTF-8'
+);
+```
+
+### 11.2 If Newsletter Content Is Intended to Contain HTML
+
+If the application requires HTML formatting in newsletter content, applying `htmlspecialchars()` to the entire body may break legitimate functionality.
+
+In this case, implement server-side HTML sanitization using a maintained allowlist-based sanitizer.
+
+The sanitizer should:
+
+- Allow only explicitly required HTML elements.
+- Restrict permitted attributes.
+- Remove event-handler attributes such as `onerror` and `onclick`.
+- Reject dangerous URL schemes.
+- Prevent script execution through injected markup.
+- Apply sanitization before the content is rendered.
+
+### 11.3 Additional Security Recommendations
+
+- Review all administrative output locations that render newsletter content.
+- Ensure consistent output encoding across the application.
+- Review access-control enforcement for the Newsletter Module.
+- Consider Content Security Policy as an additional defense-in-depth measure.
+- Review cookie configuration and enable the Secure attribute when HTTPS is used.
+- Add regression tests to ensure that submitted content cannot execute JavaScript when displayed.
+
+Content Security Policy should not be considered a replacement for proper output encoding or HTML sanitization.
+
+---
+
+## 12. Detection and Defensive Considerations
+
+Potential indicators of exploitation include:
+
+- Unexpected HTML markup in newsletter content.
+- Event-handler attributes such as `onerror`, `onload`, or `onclick`.
+- Suspicious content submitted through the `newsletter_body` parameter.
+- Unexpected JavaScript execution when administrators access stored newsletters.
+
+Defensive review should include:
+
+- Inspection of existing newsletter records.
+- Review of administrative access logs.
+- Examination of newsletter creation and modification events.
+- Validation of stored HTML content.
+- Review of other application components that render user-controlled content.
+
+The presence of suspicious HTML in a newsletter should be investigated in context. HTML content alone is not sufficient to establish exploitation.
 
 ---
 
 ## 13. Disclosure Timeline
 
-| Date       | Event |
-|------------|-------|
+| Date | Event |
+|---|---|
 | 2026-11-13 | Initial vulnerability identification |
-| 2026-11-13 | Static source code analysis |
-| 2026-11-13 | Dynamic reproduction in an authorized laboratory |
-| 2026-11-13 | Verification against official source code |
-| 2026-11-14 | Advisory published on GitHub |
-| 2026-11-14 | Vulnerability submitted to VulDB |
-| 2026-11-15 | Cross-user Stored XSS execution confirmed using two separate administrative accounts |
-| 2026-11-15 | Authenticated same-origin request behavior examined |
-| Pending | Private vulnerability disclosure to the vendor |
-| Pending | Vendor acknowledgment |
-| Pending | Vendor technical assessment |
-| Pending | Security fix or mitigation availability |
+| 2026-11-13 | Static source-code analysis and source-to-sink identification |
+| 2026-11-13 | Dynamic reproduction of Stored XSS |
+| 2026-11-14 | Public advisory published |
+| 2026-11-14 | Vulnerability submission sent to VulDB |
+| 2026-11-15 | Cross-user execution confirmed using two separate authenticated accounts |
+| 2026-11-15 | Same-origin request behavior examined through manual browser testing |
+| 2026-11-17 | HTTP POST request and multipart payload evidence captured and documented |
+| 2026-11-17 | Evidence repository updated with HTTP request and validation documentation |
+| Pending | Vendor notification |
+| Pending | Vendor acknowledgment and technical assessment |
+| Pending | Patch availability and verification |
+
+The VulDB submission does not imply acceptance, publication, or CVE assignment.
+
+Vendor notification and response remain pending.
 
 ---
 
 ## 14. Vendor Communication
 
-- **Intended channel:** Private communication through official Modified Shop maintainer contact channels.
-- **Status:** Pending.
+**Vendor notification status:** Pending.
 
-The vendor should be provided with the technical description, affected source code location, reproduction procedure, and recommended remediation.
+At the time of this advisory revision, vendor notification has not been confirmed.
 
-No vendor confirmation or patch availability is currently claimed.
+No vendor acknowledgment, patch confirmation, or official remediation statement is claimed.
+
+The vulnerability remains publicly documented while vendor communication is pending.
+
+Any future vendor response or remediation status will be reflected in a subsequent advisory revision.
 
 ---
 
 ## 15. Credits
 
-- **Researcher:** Diego Teixeira
-- **Research type:** Independent security research
-- **Disclosure:** Responsible vulnerability disclosure
+**Researcher:** Diego Teixeira  
+**Research Type:** Independent security research  
+**Disclosure Status:** Public advisory; vendor notification pending  
+
+The vulnerability was identified and validated through authorized testing in a controlled RedScan Academy laboratory environment.
 
 ---
 
 ## 16. References
 
-- CWE-79 — https://cwe.mitre.org/data/definitions/79.html
-- OWASP Cross Site Scripting Prevention Cheat Sheet — https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
-- OWASP Top 10: A03:2021 Injection — https://owasp.org/Top10/A03_2021-Injection/
-- Modified Shop Official Repository — https://github.com/modified-shop/modified-shop
+- CWE-79 — Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')  
+  https://cwe.mitre.org/data/definitions/79.html
+
+- OWASP Cross Site Scripting Prevention Cheat Sheet  
+  https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
+
+- OWASP Top 10: A03:2021 – Injection  
+  https://owasp.org/Top10/A03_2021-Injection/
+
+- PHP Manual — htmlspecialchars()  
+  https://www.php.net/manual/en/function.htmlspecialchars.php
 
 ---
 
 ## 17. Revision History
 
-| Version | Date       | Change |
-|---------|------------|--------|
-| 1.0     | 2026-11-13 | Initial consolidated advisory |
-| 1.1     | 2026-11-13 | Technical review, privilege requirements clarification, impact qualification, and disclosure scope corrections |
-| 1.2     | 2026-11-14 | Clarified cross-user testing limitations, refined impact statements, reduced repetition, and improved remediation guidance |
-| 1.3     | 2026-11-15 | Added cross-user Stored XSS validation, documented authenticated same-origin request behavior and session cookie attributes, and updated testing scope and impact limitations |
+| Version | Date | Changes |
+|---|---|---|
+| 1.0 | 2026-11-13 | Initial vulnerability documentation and proof of concept |
+| 1.1 | 2026-11-14 | Additional technical analysis and public advisory |
+| 1.2 | 2026-11-15 | Cross-user validation and impact clarification |
+| 1.3 | 2026-11-15 | Additional testing details and same-origin request observations |
+| 1.4 | 2026-11-17 | HTTP request evidence, validation documentation, source integrity details, and clarification of testing limitations |
 
 ---
 
 ## 18. Legal Notice
 
-This advisory is published for educational and defensive security purposes.
+This advisory documents a security vulnerability identified through authorized research in a controlled laboratory environment.
 
-Testing was conducted in an authorized and controlled laboratory environment.
+Testing was limited to the research environment and the accounts used for validation.
 
-The information provided must not be used to access, test, or compromise systems without explicit authorization.
+The proof-of-concept payload was designed to demonstrate JavaScript execution and did not perform credential theft, session extraction, data exfiltration, destructive operations, or unauthorized system modifications.
 
----
+The information is provided for security research, defensive analysis, and remediation purposes.
 
-## 19. Contact
-
-- **Researcher:** Diego Teixeira
-- **Research environment:** RedScan Academy
-- **GitHub:** https://github.com/DBTxx/Sec-Advisories
+The researcher makes no claim that systems outside the tested environment are affected without independent verification.
 ```
 
