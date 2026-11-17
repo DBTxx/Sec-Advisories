@@ -182,23 +182,15 @@ The second execution did not require submitting the payload again.
 
 Cross-user validation was performed using two separate accounts.
 
-**Account A**
+**Account A — Payload Submission**
 
-The first account submitted and stored the proof-of-concept payload.
+Account A was an existing administrative account used to submit and store the proof-of-concept payload.
 
-**Account B**
+**Account B — Cross-User Validation**
 
-A separate account, initially created as a customer account and subsequently granted administrative access, including permission to access the Newsletter Module.
+Account B was originally created as a standard customer account. Using Account A, administrative permissions were subsequently granted to Account B, including permission to access the Newsletter Module.
 
-Account B accessed the same stored newsletter.
-
-The JavaScript payload executed in Account B's browser session without requiring a new submission.
-
-This confirms that the stored content can affect another authenticated user with access to the affected module.
-
-The validation was limited to the two tested accounts. It does not establish that every administrative role or permission configuration is affected.
-
-### 4.3 Same-Origin Request Test
+Account B accessed the previously stored newsletter through a separate authenticated session, triggering JavaScript execution without submitting the payload again.
 
 A separate HTTP request test was manually performed through the browser Developer Tools Console while authenticated as Account B.
 
@@ -371,8 +363,8 @@ The objective was to determine whether the stored payload could execute in a sep
 
 | Account | Description |
 |---|---|
-| Account A | Account used to submit and store the payload |
-| Account B | Separate account subsequently granted administrative access, including permission to access the Newsletter Module |
+| Account A | Existing administrative account used to submit and store the payload. |
+| Account B | Originally a standard customer account. Administrative permissions, including access to the Newsletter Module, were granted using Account A. |
 
 ### 8.2 Procedure
 
