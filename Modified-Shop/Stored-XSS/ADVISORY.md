@@ -607,5 +607,20 @@ The proof-of-concept payload was designed to demonstrate JavaScript execution an
 The information is provided for security research, defensive analysis, and remediation purposes.
 
 The researcher makes no claim that systems outside the tested environment are affected without independent verification.
+
 ```
+---
+
+## 19. Researcher & Acknowledgments
+
+### Researcher
+
+**Name:** Diego Teixeira  
+**GitHub:** [Sec-Advisories](https://github.com/DBTxx)
+**Via:** RedScan Academy
+
+Independent security researcher focused on vulnerability research, application security, and cybersecurity.
+
+
+
 
