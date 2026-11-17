@@ -609,7 +609,6 @@ The information is provided for security research, defensive analysis, and remed
 The researcher makes no claim that systems outside the tested environment are affected without independent verification.
 
 ```
----
 
 ## 19. Researcher & Acknowledgments
 
