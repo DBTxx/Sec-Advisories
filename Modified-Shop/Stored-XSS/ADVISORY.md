@@ -620,6 +620,6 @@ The researcher makes no claim that systems outside the tested environment are af
 
 Independent security researcher focused on vulnerability research, application security, and cybersecurity.
 
-
+```
 
 
