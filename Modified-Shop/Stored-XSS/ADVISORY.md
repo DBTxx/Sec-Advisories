@@ -264,17 +264,11 @@ The impact assessment must remain limited to the demonstrated behavior.
 | OWASP Top 10 | A03:2021 – Injection |
 | Vulnerability Type | Stored Cross-Site Scripting |
 | Attack Vector | Web application |
-| Authentication Required | Yes |
-| Required Access | Permission to access the Newsletter Module |
-| User Interaction | Access to the affected newsletter content |
+| Attacker Privileges | Administrative access with permission to modify newsletter content |
+| Victim Access | Authenticated access to the affected newsletter content |
+| User Interaction | Victim must access the affected content |
 | CVSS | Pending assessment |
 | Severity | Pending assessment |
-
-The vulnerability requires an authenticated account with permission to access the affected administrative functionality.
-
-The cross-user validation confirms execution in a second account with access to the Newsletter Module.
-
-A definitive CVSS score has not yet been assigned.
 
 ---
 
@@ -493,16 +487,16 @@ The sanitizer should:
 - Prevent script execution through injected markup.
 - Apply sanitization before the content is rendered.
 
-### 11.3 Additional Security Recommendations
+#### 11.3 Additional Security Recommendations
 
-- Review all administrative output locations that render newsletter content.
-- Ensure consistent output encoding across the application.
-- Review access-control enforcement for the Newsletter Module.
-- Consider Content Security Policy as an additional defense-in-depth measure.
-- Review cookie configuration and enable the Secure attribute when HTTPS is used.
-- Add regression tests to ensure that submitted content cannot execute JavaScript when displayed.
+- Review all administrative output locations that render newsletter content to identify similar injection vulnerabilities.
+- Apply context-appropriate output encoding consistently across the application.
+- Review and enforce least-privilege access controls for the Newsletter Module, separating content creation, modification, and viewing permissions where appropriate.
+- Consider implementing Content Security Policy (CSP) as an additional defense-in-depth measure.
+- Review session cookie configuration and enable the Secure attribute when the application is served exclusively over HTTPS.
+- Implement regression tests covering newsletter creation, modification, preview, and subsequent retrieval to ensure that stored content cannot execute unauthorized JavaScript.
 
-Content Security Policy should not be considered a replacement for proper output encoding or HTML sanitization.
+Content Security Policy should not be considered a replacement for proper contextual output encoding or HTML sanitization.
 
 ---
 
