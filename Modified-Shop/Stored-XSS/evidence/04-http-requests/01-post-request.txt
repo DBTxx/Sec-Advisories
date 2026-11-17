@@ -1,0 +1,8 @@
+POST /admin/module_newsletter.php?action=save HTTP/1.1
+Host: 192.168.56.144:8080
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0
+Content-Type: multipart/form-data; boundary=----geckoformboundaryc428bac4a9d187fcd53f69b042b020e0
+Origin: http://192.168.56.144:8080
+Referer: http://192.168.56.144:8080/admin/module_newsletter.php?action=edit&ID=1
+
+[Cookie redacted]
