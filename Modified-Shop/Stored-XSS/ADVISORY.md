@@ -4,7 +4,7 @@
 **Status:** Public advisory — vendor notification pending  
 **Date:** 2026-11-13  
 **Last Updated:** 2026-11-17  
-**Advisory Version:** 1.4  
+**Advisory Version:** 1.4
 
 ---
 
@@ -36,13 +36,13 @@ Testing demonstrated that:
 - JavaScript executes after the newsletter is saved.
 - JavaScript executes again when the stored newsletter is accessed through a subsequent preview request.
 - The stored payload executes in two separate authenticated administrative sessions.
-- A second account could trigger the stored payload without submitting it again.
+- A second account can trigger the stored payload without submitting it again.
 
 Cross-user execution was confirmed using two separate accounts with access to the Newsletter Module.
 
 A separate authenticated same-origin HTTP request test was also performed manually through the browser Developer Tools Console while authenticated as the second account. The request returned HTTP 200 OK without redirection.
 
-**Important distinction:** this HTTP request was initiated manually by the researcher through the Developer Tools Console. It was not initiated by the stored XSS payload and does not demonstrate an unauthorized administrative action.
+**Important distinction:** This HTTP request was initiated manually by the researcher through the Developer Tools Console. It was not initiated by the stored XSS payload and does not demonstrate an unauthorized administrative action.
 
 No session theft, cookie extraction, session hijacking, privilege escalation, unauthorized administrative modification, data exfiltration, or account compromise was demonstrated during testing.
 
@@ -165,7 +165,7 @@ Consequently, executable HTML event-handler attributes can be interpreted by the
 
 ## 4. Security Impact
 
-The confirmed impact is persistent JavaScript execution in the browser context of authenticated users who can access the affected Newsletter Module.
+The confirmed impact is persistent JavaScript execution in the browser context of authenticated users who can access the affected Newsletter Module and the stored newsletter content.
 
 ### 4.1 Persistent Execution
 
@@ -191,6 +191,12 @@ Account A was an existing administrative account used to submit and store the pr
 Account B was originally created as a standard customer account. Using Account A, administrative permissions were subsequently granted to Account B, including permission to access the Newsletter Module.
 
 Account B accessed the previously stored newsletter through a separate authenticated session, triggering JavaScript execution without submitting the payload again.
+
+This confirms that the stored content can execute in a separate authenticated administrative session.
+
+The test does not establish that every administrative role or permission configuration is affected.
+
+### 4.3 Same-Origin Request Test
 
 A separate HTTP request test was manually performed through the browser Developer Tools Console while authenticated as Account B.
 
@@ -223,7 +229,7 @@ The HTTP status and response length alone do not establish the contents or sensi
 
 ### 4.4 Session Cookie Attributes
 
-The following cookie attributes were observed during testing:
+The following attributes were observed on the application session cookie during testing in the laboratory environment:
 
 | Attribute | Observed Value |
 |---|---|
@@ -250,7 +256,7 @@ The following activities were not performed or demonstrated:
 - Unauthorized account modification.
 - Data exfiltration.
 - Account compromise.
-- Execution against users without access to the affected administrative module.
+- Execution against users without access to the affected administrative functionality.
 
 The impact assessment must remain limited to the demonstrated behavior.
 
@@ -263,12 +269,18 @@ The impact assessment must remain limited to the demonstrated behavior.
 | CWE | CWE-79 |
 | OWASP Top 10 | A03:2021 – Injection |
 | Vulnerability Type | Stored Cross-Site Scripting |
-| Attack Vector | Web application |
+| Attack Surface | Administrative web interface |
 | Attacker Privileges | Administrative access with permission to modify newsletter content |
 | Victim Access | Authenticated access to the affected newsletter content |
 | User Interaction | Victim must access the affected content |
 | CVSS | Pending assessment |
 | Severity | Pending assessment |
+
+The tested exploitation scenario required an administrative account with permission to submit or modify newsletter content.
+
+The cross-user validation demonstrated execution in a separate account that had also been granted administrative permissions, including access to the Newsletter Module.
+
+Exploitation by an unprivileged customer account was not demonstrated.
 
 ---
 
@@ -288,7 +300,7 @@ No external communication, credential collection, session extraction, or destruc
 
 ### 6.2 Reproduction Steps
 
-1. Authenticate to the Modified Shop administrative interface using an account with permission to access the Newsletter Module.
+1. Authenticate to the Modified Shop administrative interface using an account with permission to modify newsletter content.
 2. Navigate to the Newsletter Module.
 3. Open or create a newsletter.
 4. Submit the proof-of-concept payload through the `newsletter_body` parameter.
@@ -487,7 +499,7 @@ The sanitizer should:
 - Prevent script execution through injected markup.
 - Apply sanitization before the content is rendered.
 
-#### 11.3 Additional Security Recommendations
+### 11.3 Additional Security Recommendations
 
 - Review all administrative output locations that render newsletter content to identify similar injection vulnerabilities.
 - Apply context-appropriate output encoding consistently across the application.
@@ -562,7 +574,7 @@ Any future vendor response or remediation status will be reflected in a subseque
 
 **Researcher:** Diego Teixeira  
 **Research Type:** Independent security research  
-**Disclosure Status:** Public advisory; vendor notification pending  
+**Disclosure Status:** Public advisory; vendor notification pending
 
 The vulnerability was identified and validated through authorized testing in a controlled RedScan Academy laboratory environment.
 
@@ -626,5 +638,3 @@ Special thanks to **RedScan Academy** for providing the controlled laboratory en
 This acknowledgment does not imply endorsement of the findings by RedScan Academy or any affiliation beyond the use of its training environment.
 
 ---
-
-
